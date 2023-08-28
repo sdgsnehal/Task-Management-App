@@ -1,4 +1,4 @@
 const Register =(req,res)=>{
-    res.send("resgister Page")
+    res.send(req.body)
 }
 export default Register;
