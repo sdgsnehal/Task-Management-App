@@ -1,8 +1,9 @@
 import { validationResult } from "express-validator";
 import { jsonGenerate } from "../utils/helpers.js";
-import { StatusCode } from "../utils/constant.js";
+import { StatusCode, JWT_TOKEN_SECRET } from "../utils/constant.js";
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
+import Jwt from "jsonwebtoken";
 
 const Register = async (req, res) => {
   const errors = validationResult(req);
@@ -11,14 +12,22 @@ const Register = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const hashPassword = await bcrypt.hash(password, salt);
     const userExist = await User.find({
-         $or:[{
-            email:email
-         },{
-            username:username
-         }]
-    })
-    if(userExist){
-        return res.json(jsonGenerate(StatusCode.UNPROCESSABLE_ENTITY,"User or Email already register"))
+      $or: [
+        {
+          email: email,
+        },
+        {
+          username: username,
+        },
+      ],
+    });
+    if (userExist) {
+      return res.json(
+        jsonGenerate(
+          StatusCode.UNPROCESSABLE_ENTITY,
+          "User or Email already register"
+        )
+      );
     }
     // save to db
     try {
@@ -28,8 +37,12 @@ const Register = async (req, res) => {
         password: hashPassword,
         username: username,
       });
+      const token = Jwt.sign({ userId: result._id }, JWT_TOKEN_SECRET);
       res.json(
-        jsonGenerate(StatusCode.SUCCESS, "Registration Succesfull", result)
+        jsonGenerate(StatusCode.SUCCESS, "Registration Succesfull", {
+          userId: result._id,
+          token: token,
+        })
       );
     } catch (error) {
       console.log(error);
